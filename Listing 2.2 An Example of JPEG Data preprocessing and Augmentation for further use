@@ -1,0 +1,58 @@
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+import os
+
+# Load the image
+input_image_path = '/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/CH2_Ballan_food.jpg'
+image = Image.open(input_image_path)
+
+# Set the output directory
+output_directory = '/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/'
+
+# Data Augmentation Functions
+def apply_brightness_contrast(image, brightness_factor, contrast_factor):
+    enhancer = ImageEnhance.Brightness(image)
+    image = enhancer.enhance(brightness_factor)
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(contrast_factor)
+    return image
+
+def apply_mirror_flip(image):
+    return ImageOps.mirror(image)
+
+def apply_rotate(image, degrees):
+    return image.rotate(degrees)
+
+def apply_blur(image, radius):
+    return image.filter(ImageFilter.GaussianBlur(radius=radius))
+
+# Augmentation Parameters
+augmentation_params = [
+    {"name": "original", "brightness": 1.0, "contrast": 1.0, "mirror": False, "rotate": 0, "blur": 0},
+    {"name": "brightened", "brightness": 1.5, "contrast": 1.0, "mirror": False, "rotate": 0, "blur": 0},
+    {"name": "mirrored", "brightness": 1.0, "contrast": 1.0, "mirror": True, "rotate": 0, "blur": 0},
+    {"name": "rotated", "brightness": 1.0, "contrast": 1.0, "mirror": False, "rotate": 45, "blur": 0},
+    {"name": "blurred", "brightness": 1.0, "contrast": 1.0, "mirror": False, "rotate": 0, "blur": 2},
+]
+
+# Create a new image to hold all the augmented images
+combined_image = Image.new('RGB', (image.width * len(augmentation_params), image.height))
+
+# Apply data augmentation and save augmented images
+for i, params in enumerate(augmentation_params):
+    augmented_image = apply_brightness_contrast(image.copy(), params["brightness"], params["contrast"])
+    
+    if params["mirror"]:
+        augmented_image = apply_mirror_flip(augmented_image)
+    
+    if params["rotate"] > 0:
+        augmented_image = apply_rotate(augmented_image, params["rotate"])
+    
+    if params["blur"] > 0:
+        augmented_image = apply_blur(augmented_image, params["blur"])
+    
+    # Paste the augmented image into the combined image
+    combined_image.paste(augmented_image, (i * image.width, 0))
+
+# Save the combined image
+combined_image_path = os.path.join(output_directory, 'combined_image.jpg')
+combined_image.save(combined_image_path)
