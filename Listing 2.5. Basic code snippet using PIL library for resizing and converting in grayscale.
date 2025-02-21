@@ -1,0 +1,19 @@
+from PIL import Image
+
+# Replace with the path to your image file
+image_path = "/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/original_CH2_Ballan_food.jpg"
+
+# Open the image file
+image = Image.open(image_path)
+
+# Resize the image to 400x300 pixels
+resized_image = image.resize((400, 300))
+
+# Convert the image to grayscale
+grayscale_image = resized_image.convert('L')
+
+# Replace with the path where you want to save the grayscale image
+output_path = "/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/grayscale.jpg"
+
+# Save the grayscale image
+grayscale_image.save(output_path)
