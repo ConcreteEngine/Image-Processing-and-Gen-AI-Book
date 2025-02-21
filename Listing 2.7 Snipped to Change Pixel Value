@@ -1,0 +1,15 @@
+import matplotlib.pyplot as plt
+from PIL import Image
+
+# Open the image
+image_path = "/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/original_CH2_Ballan_food.jpg"
+image = Image.open(image_path)
+
+# Convert the image to RGB
+rgb_image = image.convert('RGB')
+
+# Get the red, green, and blue channels
+r, g, b = rgb_image.split()
+
+# Create a new image with the red channel removed
+image_without_red = Image.merge('RGB', (g, g, b))
