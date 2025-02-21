@@ -1,0 +1,34 @@
+import zlib
+
+def compress(IMG):
+  """Compresses any image using the DEFLATE algorithm.
+
+  Args:
+    IMG: The image to compress.
+
+  Returns:
+    A compressed byte string.
+  """
+
+  return zlib.compress(IMG)
+
+def decompress(IMG):
+  """Decompresses data using the DEFLATE algorithm.
+
+  Args:
+    data: The compressed data to decompress.
+
+  Returns:
+    A decompressed byte string.
+  """
+
+  return zlib.decompress(IMG)
+
+if __name__ == '__main__':
+  IMG = b'This is some image to compress.'
+
+  compressed_data = compress(IMG)
+  decompressed_data = decompress(compressed_data)
+
+  print('Compressed data length:', len(compressed_data))
+  print('Decompressed data length:', len(decompressed_data))
