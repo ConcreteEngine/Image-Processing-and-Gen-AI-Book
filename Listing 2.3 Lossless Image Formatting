@@ -1,0 +1,35 @@
+from PIL import Image
+
+def handle_gif(gif_image):
+    """Handles and preprocesses a GIF image.
+
+    Args:
+        gif_image: A GIF image object.
+
+    Returns:
+        A preprocessed GIF image object.
+    """
+
+    # Convert the GIF image to RGB format.
+    rgb_image = gif_image.convert("RGB")
+
+    # Resize the image to a smaller size.
+    resized_image = rgb_image.resize((256, 256))
+
+    return resized_image
+
+# Path of the GIF image
+gif_image_path = '/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/CH2_Ballan_gifexample.gif'
+
+# Load the GIF image from the file
+gif_image = Image.open(gif_image_path)
+
+# Process the GIF image
+preprocessed_image = handle_gif(gif_image)
+
+# Set the output directory
+output_directory = '/Users/meltemballan/Documents/Image_Processing/CH2_Ballan/'
+
+# Save the preprocessed image as a new GIF file in the output directory
+preprocessed_image.save(output_directory + "output.gif")
+
