@@ -1,0 +1,45 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def calculate_albedo(image, lighting_direction, lighting_intensity):
+    #A 
+    radiance = image.astype(float)
+    irradiance = np.ones_like(image) * lighting_intensity
+
+    #B 
+    albedo = np.where(irradiance != 0, radiance / irradiance, 0)
+
+    return albedo
+
+#C 
+image = cv2.imread('/Users/meltemballan/Documents/Image_Processing/CH3_Ballan/CH3_Ballan_sphere.jpeg', cv2.IMREAD_GRAYSCALE)
+
+
+#D 
+lighting_direction = np.array([0, -1, 0])
+lighting_intensity = 3.0
+albedo_bottom = calculate_albedo(image, lighting_direction, lighting_intensity)
+
+#E
+lighting_direction = np.array([-1, 0, 0])
+lighting_intensity = 2.0
+albedo_left = calculate_albedo(image, lighting_direction, lighting_intensity)
+
+#F
+lighting_direction = np.array([1, 0, 0])
+lighting_intensity = 1.0
+albedo_right = calculate_albedo(image, lighting_direction, lighting_intensity)
+
+#Combine the original and albedo images
+combined_images = np.concatenate((image, albedo_bottom, albedo_left, albedo_right), axis=1)
+
+#Display the combined images
+plt.imshow(combined_images, cmap='gray')
+plt.axis('off')
+# Add titles
+titles = ['Original', 'Albedo (Bottom Light)', 'Albedo (Left Light)', 'Albedo (Right Light)']
+for i, title in enumerate(titles):
+    plt.text(i * image.shape[1] + image.shape[1] / 2, -20, title, ha='center')
+
+plt.show()
