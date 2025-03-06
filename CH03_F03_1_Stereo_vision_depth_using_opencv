@@ -1,0 +1,70 @@
+import cv2
+import numpy as np
+from PIL import Image
+
+# Load the left and right images in grayscale
+imgL = cv2.imread("C:\\Users\\yogad\\Downloads\\download.png", 0)
+ # Load left image (grayscale)
+imgR = cv2.imread("C:\\Users\\yogad\\Downloads\\download (1).png", 0)  # Load right image (grayscale)
+
+common_size = (min(imgL.shape[1], imgR.shape[1]), min(imgL.shape[0], imgR.shape[0]))
+imgL = cv2.resize(imgL, common_size)
+imgR = cv2.resize(imgR, common_size)
+
+# Apply contrast enhancement (optional)
+clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+imgL = clahe.apply(imgL)
+imgR = clahe.apply(imgR)
+
+#A
+print(imgL.shape)  # Check image size for block size selection
+print(imgR.shape)  # Check image size for block size selection
+
+#B
+stereo = cv2.StereoBM_create(numDisparities=16, blockSize=9)
+
+#C
+disparity = stereo.compute(imgL, imgR)
+
+# Apply median filter to reduce noise (optional)
+# disparity = cv2.medianBlur(disparity, 5)
+
+#D
+min_val, max_val = disparity.min(), disparity.max()
+disparity = ((disparity - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+
+#E
+alpha = 3  # Contrast control (1.0-3.0)
+beta = 100  # Brightness control (0-100)
+disparity = cv2.convertScaleAbs(disparity, alpha=alpha, beta=beta)
+
+#F
+disparity = cv2.fastNlMeansDenoising(disparity, None, 10, 7, 21)
+
+ppi = 416  # Pixel density (pixels per inch)
+f_mm = 24.0  # Focal length in millimeters
+b_cm = 17.7  # Baseline in centimeters
+
+#G
+ppmm = ppi / 25.4 
+f = f_mm * ppmm  
+b = b_cm * 10 * ppmm  
+
+#H
+depth_map = np.ones(disparity.shape, np.single)
+non_zero_disparity_idx = disparity > 0
+depth_map[non_zero_disparity_idx] = f * b / disparity[non_zero_disparity_idx]
+
+#I
+depth_map = cv2.normalize(depth_map, depth_map, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+depth_map = np.uint8(depth_map)
+
+# Display the disparity map
+cv2.imshow('Disparity', disparity)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# Display the depth map
+cv2.imshow('Depth map', depth_map)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
