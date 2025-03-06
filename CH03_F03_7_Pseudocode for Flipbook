@@ -1,0 +1,27 @@
+import time
+import matplotlib.pyplot as plt
+
+def flipbook_animation(images, delay=0.1):
+    """Displays a sequence of images as a flipbook animation.
+
+    Args:
+        images: A list of images to be displayed.
+        delay: The duration (in seconds) to display each image.
+    """
+
+    # A
+    fig, ax = plt.subplots()
+
+    for image in images:
+        # B
+        ax.clear()
+        ax.imshow(image)
+
+        # Ensure the figure is displayed for interactive viewing (brief pause)
+        plt.pause(0.001)
+
+        # Wait for the specified delay
+        time.sleep(delay)
+
+    # C
+    plt.show()
