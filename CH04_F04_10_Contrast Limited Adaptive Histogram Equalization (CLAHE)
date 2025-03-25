@@ -1,0 +1,6 @@
+
+# Create a CLAHE object
+clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+
+# Apply CLAHE to the image
+image_clahe = clahe.apply(image)
