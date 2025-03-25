@@ -1,0 +1,9 @@
+
+…Previous code from section Opening
+# Apply erosion to the dilated image, effectively performing a closing operation
+closed_image = cv2.erode(dilated_image, structuring_element, iterations=1)
+plt.figure(figsize=(20, 5))
+….figures for other operations (see code above) 
+plt.subplot(155)
+plt.imshow(closed_image, cmap='gray')
+plt.title('Closed Image')
