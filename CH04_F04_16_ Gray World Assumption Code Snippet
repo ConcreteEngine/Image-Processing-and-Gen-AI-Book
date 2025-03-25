@@ -1,0 +1,18 @@
+
+...Previous computation of RGB channel separation
+# Compute the average color of each channel
+avg_b = np.mean(b)
+avg_g = np.mean(g)
+avg_r = np.mean(r)
+
+# Compute the average color overall
+avg = (avg_b + avg_g + avg_r) / 3
+
+# Scale each channel to make the average color gray
+b = b * (avg / avg_b)
+g = g * (avg / avg_g)
+r = r * (avg / avg_r)
+
+# Merge the channels back together
+balanced_image = cv2.merge([b, g, r])
+...Displaying and saving the results
