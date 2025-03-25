@@ -1,0 +1,12 @@
+
+# Apply a Gaussian blur to the image
+blurred = cv2.GaussianBlur(image, (21, 21),21/3)
+
+# Subtract the blurred image from the original to get the mask
+mask = cv2.subtract(image, blurred)
+
+# Multiply the mask by a factor greater than 1
+boosted_mask = cv2.multiply(mask, 1.5)
+
+# Add the boosted mask back into the original image
+sharpened = cv2.add(image, boosted_mask)
