@@ -1,0 +1,73 @@
+
+from keras.models import Sequential
+import keras
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.datasets import mnist, cifar10
+from keras.preprocessing.image import ImageDataGenerator
+from keras.utils import to_categorical
+import numpy as np
+from keras.utils import plot_model
+
+# A 
+def prepare_data(dataset_name):
+    # B 
+    (x_train, y_train), (x_test, y_test) = getattr(keras.datasets, dataset_name).load_data()
+
+    # C 
+    x_train = x_train.astype('float32') / 255.0
+    x_test = x_test.astype('float32') / 255.0
+
+    if dataset_name == 'mnist':
+        x_train = x_train.reshape(x_train.shape[0], 28, 28, 1)
+        x_test = x_test.reshape(x_test.shape[0], 28, 28, 1)
+    else:
+        x_train = x_train.reshape(x_train.shape[0], 32, 32, 3)
+        x_test = x_test.reshape(x_test.shape[0], 32, 32, 3)
+
+    return x_train, y_train, x_test, y_test
+
+# D
+def define_model(dataset_name, input_shape, num_classes):
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=input_shape))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(num_classes, activation='softmax'))  # Adjust num_classes
+
+    # E
+    model.compile(loss='sparse_categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['accuracy'])
+    return model
+
+
+if __name__ == '__main__':
+# F
+    dataset_name = input("Enter dataset (MNIST or CIFAR-10): ").lower()
+    if dataset_name not in ['mnist', 'cifar10']:
+        raise ValueError("Invalid dataset name. Please enter 'mnist' or 'cifar10'.")
+
+    x_train, y_train, x_test, y_test = prepare_data(dataset_name)
+    num_classes = len(np.unique(y_train))  # Determine number of classes automatically
+
+    input_shape = x_train.shape[1:]
+    model = define_model(dataset_name, input_shape, num_classes)
+
+    # G
+    model.fit(x_train, y_train, epochs=10, batch_size=32)
+
+    # H
+    score = model.evaluate(x_test, y_test, verbose=0)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+   
+#A Data Preparation 
+#B Split data (train/test 
+#C Preprocess data (normalize, reshape) 
+#D Defining the Model
+#E Compiling the Model
+#F Select the input dataset, MNIST or CIFAR-10
+#G Model Fitting 
