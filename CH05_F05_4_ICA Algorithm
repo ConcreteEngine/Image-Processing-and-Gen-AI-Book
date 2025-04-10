@@ -1,0 +1,46 @@
+
+import os
+import numpy as np
+from PIL import Image
+from sklearn.decomposition import FastICA
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
+# Function to load images from a directory
+def load_images_from_directory(dir_path):
+    images = []
+    for filename in os.listdir(dir_path):
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            img = Image.open(os.path.join(dir_path, filename))
+            img = img.resize((64, 64))  # Resize the image
+            img_data = np.array(img).flatten()  # Convert the image to a 1D array
+            images.append(img_data)
+    return images
+
+# Load images from the directories
+dir_path_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/human'
+dir_path_non_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/none-human'
+images_human = load_images_from_directory(dir_path_human)
+images_non_human = load_images_from_directory(dir_path_non_human)
+
+# Combine the images into one dataset
+images = np.concatenate((images_human, images_non_human), axis=0)
+
+# Normalize the image data
+scaler = StandardScaler()
+images_normalized = scaler.fit_transform(images)
+
+# Perform ICA
+ica = FastICA(n_components=10)  # Change this to the number of components you want
+features_ica = ica.fit_transform(images_normalized)
+
+# Assuming features_ica is your ICA features
+plt.figure(figsize=(8, 6))
+plt.scatter(features_ica[:, 0], features_ica[:, 1])
+plt.xlabel('First Independent Component')
+plt.ylabel('Second Independent Component')
+plt.title('ICA Scatter Plot')
+plt.show()
+
+# Save the features to a text file
+np.savetxt('/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/ICA_Results/features.txt', features_ica)
