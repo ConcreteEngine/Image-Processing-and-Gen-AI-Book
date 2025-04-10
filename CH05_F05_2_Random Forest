@@ -1,0 +1,104 @@
+
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+import os
+import cv2
+import glob
+
+
+# Directories containing your images
+dir_path_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/human'
+dir_path_non_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/none-human'
+dir_path_test = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/test'
+
+# Initialize lists to store the images and labels
+images = []
+labels = []
+filenames = []
+
+# Define the path to the images
+image_paths_human = glob.glob(f'{dir_path_human}/*.jpg')
+image_paths_non_human = glob.glob(f'{dir_path_non_human}/*.jpg')
+image_paths_test = glob.glob(f'{dir_path_test}/*.jpg')
+
+# Combine the image paths
+image_paths = image_paths_human + image_paths_non_human + image_paths_test
+
+# Load and preprocess the images
+for image_path in image_paths:
+    # Load the image
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    # Resize the image to a fixed size (e.g., 64x64)
+    img = cv2.resize(img, (64, 64))
+    
+    # Apply adaptive thresholding
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    
+    # Apply edge detection
+    img = cv2.Canny(img, 100, 200)
+    
+    # Apply blurring
+    img = cv2.GaussianBlur(img, (5, 5), 0)
+    
+    # Flatten the image and append it to the list of images
+    images.append(img.flatten())
+    
+    # Extract the label from the image path and append it to the list of labels
+    label = os.path.basename(os.path.dirname(image_path))
+    labels.append(label)
+
+    # Append the filename to the list of filenames
+    filenames.append(os.path.basename(image_path))
+
+# Convert the lists to numpy arrays
+features = np.array(images)
+labels = np.array(labels)
+
+
+# Encode the labels
+le = LabelEncoder()
+labels = le.fit_transform(labels)
+
+# Split the data into training and testing sets
+indices_train, indices_test, features_train, features_test, labels_train, labels_test = train_test_split(
+    range(len(filenames)), features, labels, test_size=0.2, random_state=42)
+# Define the parameter grid
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+
+# Create a GridSearchCV object
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42), param_grid, cv=5)
+
+# Fit the GridSearchCV object to the data
+grid_search.fit(features_train, labels_train)
+# Print the best parameters
+print(grid_search.best_params_)
+
+# Create a RandomForestClassifier with the best parameters
+best_forest = RandomForestClassifier(**grid_search.best_params_, random_state=42)
+
+# Train the model
+best_forest.fit(features_train, labels_train)
+
+
+labels_pred = best_forest.predict(features_test)
+# Get a list of filenames in the test directory
+filenames_test = os.listdir(dir_path_test)
+# Iterate over the filenames of the test images and their predicted labels
+for filename, label in zip(filenames_test, labels_pred):
+    # Print the filename and its predicted label
+    print(f"Image: {filename}, Predicted label: {le.inverse_transform([label])[0]}")
+
+# Make sure labels_test and labels_pred only contain two classes
+labels_test = [0 if label == 0 else 1 for label in labels_test]
+labels_pred = [0 if label == 0 else 1 for label in labels_pred]
+
+# Print a classification report
+print(classification_report(labels_test, labels_pred, zero_division=1))
