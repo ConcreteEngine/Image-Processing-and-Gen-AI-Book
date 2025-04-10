@@ -20,3 +20,43 @@ x_train = x_train[:len(x_train)//sequence_length * sequence_length].reshape(-1, 
 y_train = y_train[:len(y_train)//sequence_length * sequence_length].reshape(-1, sequence_length, 10).mean(axis=1)
 
 x_test = x_test[:len(x_test)//sequence_length * sequence_length].reshape(-1, sequence_length, 32, 32, 3)
+
+y_test = y_test[:len(y_test)//sequence_length * sequence_length].reshape(-1, sequence_length, 10).mean(axis=1)
+
+# C
+cnn_model = Sequential([
+    Conv2D(64, (3, 3), padding='same', activation='relu', input_shape=(32, 32, 3)),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.3),
+
+    Conv2D(128, (3, 3), padding='same', activation='relu'),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.4),
+
+    Flatten(),
+])
+
+# D
+model = Sequential([
+    TimeDistributed(cnn_model, input_shape=(sequence_length, 32, 32, 3)),
+    LSTM(50, dropout=0.5, recurrent_dropout=0.5),
+    Dense(10, activation='softmax', kernel_regularizer=l2(0.01))
+])
+
+# E
+optimizer = Adam(learning_rate=0.001)
+model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+# F
+early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001)
+#A  Loading and Preprocessing the Data
+#B Simulating Sequences
+#C CNN Configuration
+#D Combining CNN with RNN
+#E Compiling the Model
+#FCallbacks
+
+
