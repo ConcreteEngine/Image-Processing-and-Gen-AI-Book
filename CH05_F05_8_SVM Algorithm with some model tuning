@@ -1,0 +1,79 @@
+
+import os
+from PIL import Image
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn import svm
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
+
+# Define the directories
+dir_path_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/human'
+dir_path_non_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/none-human'
+
+# Function to load and preprocess images
+def load_images(dir_path):
+    images = []
+    for filename in os.listdir(dir_path):
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            img = Image.open(os.path.join(dir_path, filename))
+            img = img.resize((64, 64))  # Resize the image
+            img = np.array(img)  # Convert the image to a numpy array
+            images.append(img)
+    return np.array(images)
+
+# Load the images
+human_images = load_images(dir_path_human)
+non_human_images = load_images(dir_path_non_human)
+
+# Combine the human and non-human images
+X = np.concatenate((human_images, non_human_images))
+
+# Create labels for the images: 1 for human, 0 for non-human
+y = np.concatenate((np.ones(len(human_images)), np.zeros(len(non_human_images))))
+
+# Flatten the images
+X = X.reshape((X.shape[0], -1))
+
+# Scale the data
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+# Split the data into a training set and a test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Define parameter grid (you can add more parameters if you want)
+param_grid = [
+  {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
+  {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
+ ]
+
+# Create a SVM classifier
+clf = GridSearchCV(svm.SVC(), param_grid, cv=5)
+
+# Train the classifier
+clf.fit(X_train, y_train)
+
+
+# Make predictions on the test set
+y_pred = clf.predict(X_test)
+
+# Calculate and print the confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+print(f"Confusion Matrix:\n{cm}")
+
+# Calculate the accuracy of the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy}")
+
+# Calculate and print the precision
+precision = precision_score(y_test, y_pred, average='macro')
+print(f"Precision: {precision}")
+
+# Calculate and print the recall
+recall = recall_score(y_test, y_pred, average='macro')
+print(f"Recall: {recall}")
+
+# Calculate and print the F1 score
+f1 = f1_score(y_test, y_pred, average='macro')
+print(f"F1 Score: {f1}")
