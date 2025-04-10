@@ -1,0 +1,107 @@
+
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.preprocessing.image import img_to_array, load_img
+import numpy as np
+import os
+import cv2
+
+# Directories containing your images
+dir_path_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/human'
+dir_path_non_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/none-human'
+dir_path_test = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/test'
+
+# Load and preprocess the images
+images = []
+labels = []
+
+# Load human images
+for filename in os.listdir(dir_path_human):
+    if filename.endswith('.jpg'):  # adjust this as necessary
+        img = cv2.imread(os.path.join(dir_path_human, filename), cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (64, 64))
+        
+        # Apply adaptive thresholding
+        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        
+        # Apply edge detection
+        img = cv2.Canny(img, 100, 200)
+        
+        # Apply blurring
+        img = cv2.GaussianBlur(img, (5, 5), 0)
+        
+        images.append(img.flatten())
+        labels.append('human')
+
+# Load non-human images
+
+for filename in os.listdir(dir_path_non_human):
+    if filename.endswith('.jpg'):  # adjust this as necessary
+        img = cv2.imread(os.path.join(dir_path_non_human, filename), cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (64, 64))
+        
+        # Apply adaptive thresholding
+        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        
+        # Apply edge detection
+        img = cv2.Canny(img, 100, 200)
+        
+        # Apply blurring
+        img = cv2.GaussianBlur(img, (5, 5), 0)
+        
+        images.append(img.flatten())
+        labels.append('none_human')
+
+# Convert lists to arrays
+images = np.array(images)
+labels = np.array(labels)
+
+# Encode labels
+le = LabelEncoder()
+labels = le.fit_transform(labels)
+
+# Split data into training and testing sets
+features_train, features_test, labels_train, labels_test = train_test_split(images, labels, test_size=0.2, random_state=42)
+
+# Create a decision tree classifier object
+tree = DecisionTreeClassifier(criterion='gini', max_depth=10, min_samples_leaf=15, random_state=42)
+# Train the decision tree
+tree.fit(features_train, labels_train)
+
+# Load and preprocess the test images
+test_images = []
+test_filenames = []
+
+for filename in os.listdir(dir_path_test):
+    if filename.endswith('.jpg'):  # adjust this as necessary
+        img = cv2.imread(os.path.join(dir_path_test, filename), cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (64, 64))
+        
+        # Apply adaptive thresholding
+        img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        
+        # Apply edge detection
+        img = cv2.Canny(img, 100, 200)
+        
+        # Apply blurring
+        img = cv2.GaussianBlur(img, (5, 5), 0)
+        
+        test_images.append(img.flatten())
+        test_filenames.append(filename)
+
+
+# Convert list to array
+test_images = np.array(test_images)
+
+# Make predictions on the test set
+test_labels_pred = tree.predict(test_images)
+
+# Print filenames and predicted labels
+for filename, label in zip(test_filenames, test_labels_pred):
+    print(f"Image: {filename}, Predicted label: {le.inverse_transform([label])[0]}")
+
+# Make predictions on the validation set and print a classification report
+labels_pred = tree.predict(features_test)
+print(classification_report(labels_test, labels_pred, target_names=le.classes_))
