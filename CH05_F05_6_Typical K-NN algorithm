@@ -1,0 +1,77 @@
+
+import os
+import numpy as np
+from PIL import Image
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.models import Model
+from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
+
+# Function to load images from a directory
+def load_images_from_directory(dir_path):
+    images = []
+    for filename in os.listdir(dir_path):
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            img = Image.open(os.path.join(dir_path, filename))
+            if img.size != (64, 64):  # Check if the image size is 64x64
+                img = img.resize((64, 64))  # Resize the image if it's not
+            img_data = np.array(img).flatten()  # Convert the image to a 1D array
+            images.append(img_data)
+    return images
+
+# Load images from the directories
+dir_path_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/human'
+dir_path_non_human = '/Users/meltemballan/Documents/Image_Processing/CH5_Ballan/none-human'
+images_human = load_images_from_directory(dir_path_human)
+images_non_human = load_images_from_directory(dir_path_non_human)
+
+# Combine the images into one dataset
+images = np.concatenate((images_human, images_non_human), axis=0)
+
+# Normalize the image data
+scaler = StandardScaler()
+images_normalized = scaler.fit_transform(images)
+
+# Define the autoencoder
+input_img = Input(shape=(12288,))  # 12288 is the number of pixels in each image (64x64x3) in RGB format
+encoded = Dense(128, activation='relu')(input_img)
+encoded = Dense(64, activation='relu')(encoded)
+encoded = Dense(10, activation='relu')(encoded)
+
+decoded = Dense(64, activation='relu')(encoded)
+decoded = Dense(128, activation='relu')(decoded)
+decoded = Dense(12288, activation='sigmoid')(decoded)
+
+autoencoder = Model(input_img, decoded)
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+
+# Train the autoencoder
+autoencoder.fit(images_normalized, images_normalized, epochs=50, batch_size=256)
+
+# Use the encoder to reduce the dimensionality of the images
+encoder = Model(input_img, encoded)
+features_ae = encoder.predict(images_normalized)
+
+# Use PCA to reduce dimensionality from 10 to 2
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(features_ae)
+
+# Assuming that the first half of the images are 'human' and the second half are 'non-human'
+labels = np.concatenate((np.ones(len(images_human)), np.zeros(len(images_non_human))), axis=0)
+
+# Split the PCA-transformed features and labels into a training set and a test set
+features_train, features_test, labels_train, labels_test = train_test_split(pca_result, labels, test_size=0.2, random_state=42)
+
+# Train a K-NN model on the training set
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(features_train, labels_train)
+
+# Use the K-NN model to make predictions on the test set
+labels_pred = knn.predict(features_test)
+
+# Print a classification report
+print(classification_report(labels_test, labels_pred))
