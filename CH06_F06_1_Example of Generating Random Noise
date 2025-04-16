@@ -1,0 +1,5 @@
+                                                                             
+import numpy as np
+
+# Generate a random noise vector of size 100
+noise_vector = np.random.normal(0, 1, 100)
