@@ -1,0 +1,125 @@
+   
+import warnings
+warnings.filterwarnings("ignore")  # Suppress all warnings
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging (1 = ERROR, 2 = WARNING, 3 = INFO)
+
+import tensorflow as tf
+from tensorflow.keras.layers import Dense, Reshape, Flatten, Dropout, BatchNormalization, LeakyReLU, Conv2DTranspose, Conv2D
+from tensorflow.keras.datasets import mnist
+import numpy as np
+import matplotlib.pyplot as plt
+
+#A (refer to listing 6.4)
+(x_train, _), (_, _) = mnist.load_data()
+x_train = (x_train.astype('float32') - 127.5) / 127.5  # Normalize to [-1, 1]
+x_train = np.expand_dims(x_train, axis=-1)  # Reshape to (28, 28, 1)
+
+BUFFER_SIZE = 60000
+BATCH_SIZE = 256
+EPOCHS = 100  # Increased epochs for better training
+NOISE_DIM = 100
+NUM_EXAMPLES_TO_GENERATE = 16
+
+#B (refer to listing 6.4)
+def build_generator():
+    model = tf.keras.Sequential()
+    model.add(Dense(7 * 7 * 256, use_bias=False, input_shape=(NOISE_DIM,)))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Reshape((7, 7, 256)))
+    model.add(Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU())
+    
+    model.add(Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
+    
+    return model
+
+#C (refer to listing 6.4)
+def build_discriminator():
+    model = tf.keras.Sequential()
+    model.add(Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[28, 28, 1]))
+    model.add(LeakyReLU())
+    model.add(Dropout(0.3))  # Dropout to prevent overfitting
+    
+    model.add(Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
+    model.add(LeakyReLU())
+    model.add(Dropout(0.3))  # Dropout to prevent overfitting
+    
+    model.add(Flatten())
+    model.add(Dense(1))  # No activation function (used for Wasserstein loss)
+    
+    return model
+
+#D (Specific Loss function:Wasserstein Loss to increase the quality of output
+def wasserstein_loss(y_true, y_pred):
+    return tf.reduce_mean(y_true * y_pred)
+
+generator = build_generator()
+discriminator = build_discriminator()
+
+#E
+generator_optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=1e-4, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=1e-4, beta_1=0.5)
+
+#F
+@tf.function
+def train_step(images):
+    noise = tf.random.normal([BATCH_SIZE, NOISE_DIM])
+
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        generated_images = generator(noise, training=True)
+
+        real_output = discriminator(images, training=True)
+        fake_output = discriminator(generated_images, training=True)
+
+        gen_loss = -tf.reduce_mean(fake_output)  # Wasserstein loss for generator
+        disc_loss = tf.reduce_mean(fake_output) - tf.reduce_mean(real_output)  # Wasserstein loss for discriminator
+
+    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
+    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+
+    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+#G
+def train(dataset, epochs):
+    for epoch in range(epochs):
+        for image_batch in dataset:
+            train_step(image_batch)
+
+        # Produce images after every epoch
+        generate_and_save_images(generator, epoch + 1, seed)
+
+        print(f'Epoch {epoch + 1} completed.')
+
+    # Generate after the final epoch
+    generate_and_save_images(generator, epochs, seed)
+
+#H
+seed = tf.random.normal([NUM_EXAMPLES_TO_GENERATE, NOISE_DIM])
+
+def generate_and_save_images(model, epoch, test_input):
+    predictions = model(test_input, training=False)
+
+    plt.figure(figsize=(4, 4))  # Create a new figure
+    for i in range(predictions.shape[0]):
+        plt.subplot(4, 4, i + 1)
+        plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+        plt.axis('off')
+
+    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    plt.show()
+    plt.close()  # Close the figure after showing
+
+#I
+train_dataset = tf.data.Dataset.from_tensor_slices(x_train).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+train(train_dataset, EPOCHS)
+
