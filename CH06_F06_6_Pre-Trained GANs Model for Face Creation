@@ -1,0 +1,33 @@
+ 
+import warnings
+warnings.filterwarnings("ignore")  # Suppress all warnings
+
+import torch
+import numpy as np
+from PIL import Image
+
+#A 
+model = torch.hub.load('facebookresearch/pytorch_GAN_zoo:hub', 'PGAN', model_name='celebAHQ-512', pretrained=True, useGPU=torch.cuda.is_available())
+
+#B 
+print("Model config attributes:", dir(model.config))
+
+#C 
+def generate_random_face(model):
+    #D 
+    latent_dim = model.config.z_dim if hasattr(model.config, 'z_dim') else 512  # Default to 512 if not found
+
+    #E 
+    latent_vector = torch.randn(1, latent_dim).to(next(model.netG.parameters()).device)
+    
+    #F 
+    with torch.no_grad():
+        img_tensor = model.netG(latent_vector)
+        img = (img_tensor.clamp(-1, 1) + 1) / 2  # Normalize to [0, 1] range
+        img = img.squeeze(0).permute(1, 2, 0).cpu().numpy()  # CHW to HWC format
+        img = (img * 255).astype('uint8')  # Convert to uint8
+    return Image.fromarray(img)
+
+#H 
+image = generate_random_face(model)
+image.show()
