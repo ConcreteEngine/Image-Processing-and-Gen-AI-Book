@@ -1,0 +1,27 @@
+                                                                                  
+import tensorflow as tf
+from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, BatchNormalization, ReLU
+
+def build_generator(noise_dim):
+    model = tf.keras.Sequential()  #A 
+    
+    model.add(Dense(7 * 7 * 256, use_bias=False, input_shape=(noise_dim,)))  #B 
+    model.add(BatchNormalization())  #C 
+    model.add(ReLU())  #D 
+    
+    model.add(Reshape((7, 7, 256)))  #E 
+    
+    model.add(Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))  #F 
+    model.add(BatchNormalization())  #G 
+    model.add(ReLU())  #H 
+    
+    model.add(Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))  #I 
+    model.add(BatchNormalization())  #J
+    model.add(ReLU())  #K 
+    
+    model.add(Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))  #L 
+    return model
+
+noise_dim = 100  #M 
+
+generator = build_generator(noise_dim)  #N 
