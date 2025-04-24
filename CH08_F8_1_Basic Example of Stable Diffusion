@@ -1,0 +1,19 @@
+                                                                                     
+
+#A 
+from diffusers import StableDiffusionPipeline
+import torch
+
+#B 
+pipe = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4")
+pipe = pipe.to("cuda" if torch.cuda.is_available() else "cpu")
+
+#C 
+prompt = "a serene forest glade at sunset, with soft light filtering through trees"
+
+#D Generate an image based on the prompt
+with torch.autocast("cuda"):
+    generated_image = pipe(prompt).images[0]
+
+#E Display the generated image
+generated_image.show()
