@@ -1,0 +1,5 @@
+                                                                                    
+
+generated_image = pipe(prompt, num_inference_steps=50).images[0]
+
+
