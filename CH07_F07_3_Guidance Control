@@ -1,0 +1,3 @@
+                                                                                    
+
+generated_image = pipe(prompt, guidance_scale=7.5).images[0]
