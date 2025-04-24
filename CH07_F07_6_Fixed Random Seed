@@ -1,0 +1,7 @@
+                                                                                
+import torch
+
+torch.manual_seed(42)
+
+
+generated_image = pipe(prompt, height=512, width=512, num_inference_steps=50).images[0]
